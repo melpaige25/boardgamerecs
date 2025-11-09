@@ -11,17 +11,20 @@ A clean, modern web application to recommend board games from your collection an
 - Direct links to BoardGameGeek for each game
 
 ### Section 2: What Games Should We Buy?
-- Recommends 3 random games from your BGG collection (wishlist + rated/tracked games)
-- Prioritizes wishlist games, includes games you've rated but don't own
+- Recommends 3 random games from the top 5,000 BGG-ranked games
+- Excludes all owned and previously owned games from your collection
+- Excludes expansions (base games only)
+- Weighted by BGG rank (higher-ranked games prioritized)
 - Filters by the same criteria (player count, complexity, duration)
 - Automatically syncs filters with Section 1
-- All links verified correct (using your actual BGG data)
+- All links verified correct (using BGG game database)
 
 ## Data Files
 
 - `owned-games.json` - 277 games from your collection (where own=1)
-- `bgg-recommendations.json` - 147 games (25 wishlist + 122 rated/tracked games)
+- `bgg-recommendations.json` - 4,822 games from top 5,000 BGG rankings (excluding owned/previously owned)
 - `collection.csv` - Original CSV export from BoardGameGeek
+- `boardgames_ranks.csv` - Complete BGG game database with rankings (170,000+ games)
 
 ## Filter Options
 
@@ -74,16 +77,38 @@ Simply open `index.html` in a web browser. The app will:
 
 To update the game data:
 
+### Update Owned Games
 1. Export your collection from BoardGameGeek as CSV (replace `collection.csv`)
-2. Run `python3 parse_collection.py` to regenerate `owned-games.json`
-3. Run `python3 build_comprehensive_recommendations.py` to regenerate `bgg-recommendations.json`
+2. Run `python3 parse_collection.py` to regenerate `owned-games.json` and `excluded-game-ids.json`
+
+### Update Buy Recommendations
+1. Run `python3 build_from_all_bgg_games.py` to regenerate `bgg-recommendations.json`
+2. This uses `boardgames_ranks.csv` and excludes all games in `excluded-game-ids.json`
+3. Automatically filters out expansions and prioritizes top-ranked games
+
+### Update BGG Database (Optional)
+1. Replace `boardgames_ranks.csv` with latest BGG rankings export
+2. Run `python3 build_from_all_bgg_games.py` to rebuild recommendations
 
 ## Files
 
-- `index.html` - Main application
+### Application
+- `index.html` - Main web application
+
+### Data Files
 - `owned-games.json` - Your owned games (277 games)
-- `bgg-recommendations.json` - Buy recommendations (147 games)
+- `bgg-recommendations.json` - Buy recommendations (4,822 games)
 - `collection.csv` - BGG collection export
-- `parse_collection.py` - Script to parse owned games from CSV
-- `build_comprehensive_recommendations.py` - Script to build buy recommendations (wishlist + rated games)
+- `boardgames_ranks.csv` - Complete BGG game database
+- `excluded-game-ids.json` - IDs to exclude (owned + previously owned)
+
+### Scripts
+- `parse_collection.py` - Parse owned games from CSV
+- `build_from_all_bgg_games.py` - Build buy recommendations from BGG database
 - `test_filters.js` - Filter logic tests
+
+### Legacy Scripts (No Longer Used)
+- `build_comprehensive_recommendations.py` - Old wishlist-based approach (147 games)
+- `build_wishlist_recommendations.py` - Old wishlist-only approach (25 games)
+- `apply_id_corrections.py` - Manual ID correction workflow
+- `bgg-id-corrections.csv` - Manual ID corrections template
