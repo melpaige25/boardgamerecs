@@ -51,9 +51,22 @@ The buy recommendations are personalized based on your rating history (361 rated
 1. Analyzes your 361 rated games to identify patterns
 2. Calculates preference scores for complexity, BGG rating, and recency
 3. Scores each game from the BGG database based on these preferences
-4. Prioritizes games matching your preferences (recent, heavy, highly-rated)
+4. Uses game categories to estimate realistic complexity and duration:
+   - **Wargames**: Heavy (4.0), Very Long (180min)
+   - **Strategy games**: Medium-Heavy (3.0), Long (90min)
+   - **Thematic games**: Medium (2.5), Long (90min)
+   - **Family games**: Light-Medium (2.0), Medium (45min)
+   - **Party games**: Light (1.5), Quick (30min)
+   - **Children's games**: Light (1.3), Quick (20min)
+5. Cross-references with your collection for 96 games with actual data
+6. Prioritizes games matching your preferences (recent, heavy, highly-rated)
 
-This means you'll see more games like **Ark Nova** (2021, 8.54, heavy) and fewer like **Brass: Birmingham** (2018, 8.57, older).
+**Filter Value Distribution:**
+- Complexity: Light (290), Medium (4,031), Heavy (501) games
+- Duration: Quick (383), Medium (1,492), Long (2,434), Very Long (513) games
+- All filter combinations have 100+ results
+
+This means you'll see more games like **Hegemony** (2023, 4.2 weight, wargame) and fewer like lighter family games.
 
 ## Filter Options
 

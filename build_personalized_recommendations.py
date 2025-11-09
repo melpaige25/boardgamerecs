@@ -1,24 +1,118 @@
 #!/usr/bin/env python3
 """
-Build personalized buy recommendations using user's rating preferences
+Build personalized buy recommendations with REALISTIC filter values
 
-Uses boardgames_ranks.csv but scores games based on:
-1. Complexity preference (heavier games preferred)
-2. BGG rating preference (higher rated games preferred)
-3. Recency preference (newer games preferred)
-4. BGG rank (as tiebreaker)
+Key fix: Use game categories to estimate varied complexity and duration
+instead of using the same defaults for all games
 """
 
 import csv
 import json
 from datetime import datetime
 
+# Category-based estimates for complexity, duration, and player count
+CATEGORY_ESTIMATES = {
+    'wargames': {
+        'avgweight': 4.0,
+        'playingtime': 180,
+        'minplayers': 1,
+        'maxplayers': 4,
+    },
+    'strategygames': {
+        'avgweight': 3.0,
+        'playingtime': 90,
+        'minplayers': 2,
+        'maxplayers': 5,
+    },
+    'thematic': {
+        'avgweight': 2.5,
+        'playingtime': 90,
+        'minplayers': 2,
+        'maxplayers': 5,
+    },
+    'familygames': {
+        'avgweight': 2.0,
+        'playingtime': 45,
+        'minplayers': 2,
+        'maxplayers': 6,
+    },
+    'partygames': {
+        'avgweight': 1.5,
+        'playingtime': 30,
+        'minplayers': 4,
+        'maxplayers': 10,
+    },
+    'childrensgames': {
+        'avgweight': 1.3,
+        'playingtime': 20,
+        'minplayers': 2,
+        'maxplayers': 4,
+    },
+    'abstracts': {
+        'avgweight': 2.0,
+        'playingtime': 30,
+        'minplayers': 2,
+        'maxplayers': 2,
+    },
+    'cgs': {
+        'avgweight': 2.5,
+        'playingtime': 60,
+        'minplayers': 2,
+        'maxplayers': 2,
+    },
+}
+
+# Priority order (based on user preferences for heavier games)
+CATEGORY_PRIORITY = [
+    'wargames',
+    'strategygames',
+    'thematic',
+    'familygames',
+    'cgs',
+    'abstracts',
+    'partygames',
+    'childrensgames',
+]
+
+def get_game_estimates(row):
+    """Get estimated complexity, duration, and player count from category"""
+    # Check categories in priority order
+    for category in CATEGORY_PRIORITY:
+        rank_field = f'{category}_rank'
+        if row.get(rank_field):
+            return CATEGORY_ESTIMATES[category]
+
+    # Default for uncategorized games
+    return {
+        'avgweight': 2.5,
+        'playingtime': 60,
+        'minplayers': 2,
+        'maxplayers': 6,
+    }
+
+def load_collection_data():
+    """Load actual game data from collection.csv for cross-referencing"""
+    collection = {}
+    with open('collection.csv', 'r', encoding='utf-8') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            game_id = row['objectid']
+            try:
+                collection[game_id] = {
+                    'avgweight': float(row['avgweight']) if row['avgweight'] else None,
+                    'playingtime': int(row['playingtime']) if row['playingtime'] else None,
+                    'minplayers': int(row['minplayers']) if row['minplayers'] else None,
+                    'maxplayers': int(row['maxplayers']) if row['maxplayers'] else None,
+                }
+            except:
+                pass
+    return collection
+
 def get_weight_score(weight, profile):
     """Calculate score based on complexity preference"""
     for min_w, max_w, avg_rating in profile['weight_preferences']:
         if min_w <= weight < max_w:
             return avg_rating
-    # Default for missing weight data
     return profile['baseline_rating']
 
 def get_bgg_score(bgg_avg, profile):
@@ -50,11 +144,16 @@ def build_personalized_recommendations():
         excluded_ids = set(json.load(f))
     print(f"✓ Loaded {len(excluded_ids)} excluded game IDs")
 
+    # Load collection data for cross-referencing
+    collection_data = load_collection_data()
+    print(f"✓ Loaded {len(collection_data)} games from collection for cross-reference")
+
     # Load BGG rankings and score them
     recommendations = []
     excluded_count = 0
     expansion_count = 0
     current_year = datetime.now().year
+    crossref_count = 0
 
     with open('boardgames_ranks.csv', 'r', encoding='utf-8') as csvfile:
         reader = csv.DictReader(csvfile)
@@ -86,43 +185,44 @@ def build_personalized_recommendations():
             year = int(row['yearpublished']) if row['yearpublished'] else current_year
             bgg_avg = float(row['average']) if row['average'] else 0
 
-            # Note: boardgames_ranks.csv doesn't have weight data
-            # We'll need to fetch this or use a default
-            # For now, use BGG average as a proxy (highly rated games tend to be heavier)
-            # Better approach: Could cross-reference with collection.csv for games we know
-            estimated_weight = 2.5  # Default medium
-            if bgg_avg >= 8.0:
-                estimated_weight = 3.5  # Highly rated games tend to be heavier
-            elif bgg_avg >= 7.5:
-                estimated_weight = 3.0
-            elif bgg_avg < 6.5:
-                estimated_weight = 2.0
+            # Get estimates from category or collection data
+            if game_id in collection_data:
+                # Use actual data from collection
+                estimates = collection_data[game_id]
+                crossref_count += 1
+            else:
+                # Use category-based estimates
+                estimates = get_game_estimates(row)
 
-            # Calculate personalized score (average of the three preference dimensions)
-            weight_score = get_weight_score(estimated_weight, profile)
+            weight = estimates['avgweight'] or 2.5
+            playtime = estimates['playingtime'] or 60
+            minplayers = estimates['minplayers'] or 2
+            maxplayers = estimates['maxplayers'] or 6
+
+            # Calculate personalized score
+            weight_score = get_weight_score(weight, profile)
             bgg_score = get_bgg_score(bgg_avg, profile)
             year_score = get_year_score(year, profile)
 
-            # Weighted average: BGG preference is strongest signal, then weight, then year
+            # Weighted average: BGG preference is strongest signal
             personalized_score = (
-                bgg_score * 0.5 +     # BGG consensus (strongest correlation)
+                bgg_score * 0.5 +     # BGG consensus
                 weight_score * 0.3 +  # Complexity preference
                 year_score * 0.2      # Recency preference
             )
 
-            # Boost by BGG rank (rank 1 = best, so inverse it)
-            # Add small bonus for top ranked games
-            rank_boost = max(0, (5001 - rank) / 5000 * 0.5)  # Up to +0.5 for rank 1
+            # Boost by BGG rank
+            rank_boost = max(0, (5001 - rank) / 5000 * 0.5)
             final_score = personalized_score + rank_boost
 
             game = {
                 'id': game_id,
                 'name': row['name'],
                 'rating': 0,
-                'avgweight': estimated_weight,
-                'minplayers': 1,
-                'maxplayers': 8,
-                'playingtime': 60,
+                'avgweight': weight,
+                'minplayers': minplayers,
+                'maxplayers': maxplayers,
+                'playingtime': playtime,
                 'yearpublished': str(year),
                 'average': bgg_avg,
                 'itemtype': 'boardgame',
@@ -134,7 +234,7 @@ def build_personalized_recommendations():
 
             recommendations.append(game)
 
-    # Sort by personalized score (higher is better)
+    # Sort by personalized score
     recommendations.sort(key=lambda x: x['personalizedScore'], reverse=True)
 
     # Remove temporary fields
@@ -151,18 +251,39 @@ def build_personalized_recommendations():
     print(f"  - Source: Top 5000 ranked BGG games")
     print(f"  - Excluded expansions: {expansion_count}")
     print(f"  - Excluded owned/prev owned: {excluded_count}")
+    print(f"  - Cross-referenced with collection: {crossref_count} games")
+    print(f"  - Category-based estimates: {len(recommendations) - crossref_count} games")
     print(f"  - Sorted by personalized preference score")
     print(f"{'='*70}")
 
-    if len(recommendations) > 0:
-        print(f"\nTop 15 personalized recommendations:")
-        for i, game in enumerate(recommendations[:15], 1):
-            print(f"  #{i:2d} - {game['name']:45s} ({game['yearpublished']}) Rating: {game['average']:.2f}, Weight: {game['avgweight']:.1f}")
+    # Analyze variety in filter values
+    print(f"\n✓ Filter value variety:")
 
-    print(f"\nPersonalization based on your preferences:")
-    print(f"  - Heavier games prioritized (you rate 4.0+ games highest)")
-    print(f"  - Highly-rated games prioritized (strong BGG consensus correlation)")
-    print(f"  - Recent games prioritized (you rate 2020+ games highest)")
+    weight_dist = {}
+    for game in recommendations:
+        w = game['avgweight']
+        bucket = f"{int(w)}.0-{int(w)+1}.0"
+        weight_dist[bucket] = weight_dist.get(bucket, 0) + 1
+    print(f"  Complexity distribution:")
+    for bucket in sorted(weight_dist.keys()):
+        print(f"    {bucket}: {weight_dist[bucket]} games")
+
+    time_dist = {}
+    for game in recommendations:
+        t = game['playingtime']
+        if t <= 30: bucket = 'Quick (≤30)'
+        elif t <= 60: bucket = 'Medium (31-60)'
+        elif t <= 90: bucket = 'Long (61-90)'
+        else: bucket = 'Very Long (>90)'
+        time_dist[bucket] = time_dist.get(bucket, 0) + 1
+    print(f"  Duration distribution:")
+    for bucket in ['Quick (≤30)', 'Medium (31-60)', 'Long (61-90)', 'Very Long (>90)']:
+        if bucket in time_dist:
+            print(f"    {bucket}: {time_dist[bucket]} games")
+
+    print(f"\nTop 10 personalized recommendations:")
+    for i, game in enumerate(recommendations[:10], 1):
+        print(f"  #{i:2d} - {game['name']:45s} Weight: {game['avgweight']:.1f}, Time: {game['playingtime']}min, Players: {game['minplayers']}-{game['maxplayers']}")
 
 if __name__ == '__main__':
     build_personalized_recommendations()
