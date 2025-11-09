@@ -478,12 +478,13 @@
                     </div>
                 `;
             } else {
-                // Shuffle games to show different results each time
+                // Shuffle and pick 3 random games
                 const shuffled = [...filteredBuy].sort(() => Math.random() - 0.5);
+                const selected = shuffled.slice(0, Math.min(3, shuffled.length));
 
                 const html = `
                     <div class="game-grid">
-                        ${shuffled.map(game => createGameCard(game)).join('')}
+                        ${selected.map(game => createGameCard(game)).join('')}
                     </div>
                 `;
 
