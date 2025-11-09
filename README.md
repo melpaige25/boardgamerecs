@@ -11,7 +11,8 @@ A clean, modern web application to recommend board games from your collection an
 - Direct links to BoardGameGeek for each game
 
 ### Section 2: What Games Should We Buy?
-- Recommends 3 random games from your BGG wishlist/want list
+- Recommends 3 random games from your BGG collection (wishlist + rated/tracked games)
+- Prioritizes wishlist games, includes games you've rated but don't own
 - Filters by the same criteria (player count, complexity, duration)
 - Automatically syncs filters with Section 1
 - All links verified correct (using your actual BGG data)
@@ -19,7 +20,7 @@ A clean, modern web application to recommend board games from your collection an
 ## Data Files
 
 - `owned-games.json` - 277 games from your collection (where own=1)
-- `bgg-recommendations.json` - 25 games from your BGG wishlist/want list
+- `bgg-recommendations.json` - 147 games (25 wishlist + 122 rated/tracked games)
 - `collection.csv` - Original CSV export from BoardGameGeek
 
 ## Filter Options
@@ -75,14 +76,14 @@ To update the game data:
 
 1. Export your collection from BoardGameGeek as CSV (replace `collection.csv`)
 2. Run `python3 parse_collection.py` to regenerate `owned-games.json`
-3. Run `python3 build_wishlist_recommendations.py` to regenerate `bgg-recommendations.json`
+3. Run `python3 build_comprehensive_recommendations.py` to regenerate `bgg-recommendations.json`
 
 ## Files
 
 - `index.html` - Main application
 - `owned-games.json` - Your owned games (277 games)
-- `bgg-recommendations.json` - Your wishlist games (25 games)
+- `bgg-recommendations.json` - Buy recommendations (147 games)
 - `collection.csv` - BGG collection export
 - `parse_collection.py` - Script to parse owned games from CSV
-- `build_wishlist_recommendations.py` - Script to build wishlist recommendations from CSV
+- `build_comprehensive_recommendations.py` - Script to build buy recommendations (wishlist + rated games)
 - `test_filters.js` - Filter logic tests
