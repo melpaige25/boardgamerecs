@@ -235,7 +235,7 @@
   },
   {
     "id": "164928",
-    "name": "Orléans",
+    "name": "Orl\u00e9ans",
     "avgweight": 3.09,
     "minplayers": 2,
     "maxplayers": 4,
@@ -351,7 +351,7 @@
     "bggrecplayers": "1,2,3,4,5"
   },
   {
-    "id": "328479",
+    "id": "373106",
     "name": "Sky Team",
     "avgweight": 2.11,
     "minplayers": 2,
@@ -937,7 +937,7 @@
   },
   {
     "id": "316554",
-    "name": "Dune: Imperium – Uprising",
+    "name": "Dune: Imperium \u2013 Uprising",
     "avgweight": 3.15,
     "minplayers": 1,
     "maxplayers": 6,
@@ -962,7 +962,7 @@
     "bggrecplayers": "2,3,4"
   },
   {
-    "id": "298836",
+    "id": "328479",
     "name": "Living Forest",
     "avgweight": 2.38,
     "minplayers": 1,
