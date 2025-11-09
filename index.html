@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Board Game Recommender</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #fff;
+            background: #000;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            border-bottom: 2px solid #333;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #aaa;
+        }
+
+        /* Section Styling */
+        section {
+            padding: 40px 0;
+        }
+
+        .section-owned {
+            background: #000;
+            border-bottom: 3px solid #00ff00;
+        }
+
+        .section-owned h2 {
+            color: #00ff00;
+        }
+
+        .section-buy {
+            background: #000;
+            border-bottom: 3px solid #ff0000;
+        }
+
+        .section-buy h2 {
+            color: #ff0000;
+        }
+
+        /* Filter Controls */
+        .filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .section-owned .filter-group label {
+            color: #00ff00;
+        }
+
+        .section-buy .filter-group label {
+            color: #ff0000;
+        }
+
+        select {
+            padding: 12px;
+            font-size: 1rem;
+            border: 2px solid #333;
+            background: #1a1a1a;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .section-owned select {
+            border-color: #00ff00;
+        }
+
+        .section-owned select:hover,
+        .section-owned select:focus {
+            border-color: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            outline: none;
+        }
+
+        .section-buy select {
+            border-color: #ff0000;
+        }
+
+        .section-buy select:hover,
+        .section-buy select:focus {
+            border-color: #ff0000;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+            outline: none;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin: 20px 0;
+        }
+
+        .btn-owned {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .btn-owned:hover {
+            background: #00cc00;
+            box-shadow: 0 5px 20px rgba(0, 255, 0, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-buy {
+            background: #ff0000;
+            color: #fff;
+        }
+
+        .btn-buy:hover {
+            background: #cc0000;
+            box-shadow: 0 5px 20px rgba(255, 0, 0, 0.4);
+            transform: translateY(-2px);
+        }
+
+        /* Game Cards */
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .game-card {
+            background: #1a1a1a;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .section-owned .game-card {
+            border-color: #00ff00;
+        }
+
+        .section-owned .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 255, 0, 0.3);
+        }
+
+        .section-buy .game-card {
+            border-color: #ff0000;
+        }
+
+        .section-buy .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 0, 0, 0.3);
+        }
+
+        .game-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+            color: #fff;
+        }
+
+        .game-card h3 a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .section-owned .game-card h3 a:hover {
+            color: #00ff00;
+        }
+
+        .section-buy .game-card h3 a:hover {
+            color: #ff0000;
+        }
+
+        .game-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .section-owned .info-label {
+            color: #00ff00;
+        }
+
+        .section-buy .info-label {
+            color: #ff0000;
+        }
+
+        .info-value {
+            color: #fff;
+            font-size: 1rem;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state p {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.1rem;
+            color: #666;
+        }
+
+        /* Rating Badge */
+        .rating-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .section-owned .rating-badge {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+        }
+
+        .section-buy .rating-badge {
+            background: rgba(255, 0, 0, 0.2);
+            color: #ff0000;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .filters {
+                grid-template-columns: 1fr;
+            }
+
+            .game-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        /* Show/Hide results button area */
+        .button-area {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Board Game Recommender</h1>
+        <p class="subtitle">Find your next favorite game</p>
+    </header>
+
+    <!-- Section 1: What Should We Play Today? -->
+    <section class="section-owned">
+        <div class="container">
+            <h2>What Should We Play Today?</h2>
+
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="owned-players">Players</label>
+                    <select id="owned-players">
+                        <option value="">Any</option>
+                        <option value="1">1 Player</option>
+                        <option value="2">2 Players</option>
+                        <option value="3">3 Players</option>
+                        <option value="4">4 Players</option>
+                        <option value="5">5 Players</option>
+                        <option value="6">6+ Players</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="owned-complexity">Complexity</label>
+                    <select id="owned-complexity">
+                        <option value="">Any</option>
+                        <option value="light">Light (1-2)</option>
+                        <option value="medium">Medium (2-3.5)</option>
+                        <option value="heavy">Heavy (3.5-5)</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="owned-duration">Duration</label>
+                    <select id="owned-duration">
+                        <option value="">Any</option>
+                        <option value="quick">Quick (0-30 min)</option>
+                        <option value="medium">Medium (30-60 min)</option>
+                        <option value="long">Long (60-90 min)</option>
+                        <option value="verylong">Very Long (90+ min)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="button-area">
+                <button class="btn btn-owned" id="recommend-owned">Recommend</button>
+            </div>
+
+            <div id="owned-results">
+                <div class="empty-state">
+                    <p>Click "Recommend" to get game suggestions!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section 2: What Games Should We Buy? -->
+    <section class="section-buy">
+        <div class="container">
+            <h2>What Games Should We Buy?</h2>
+
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="buy-players">Players</label>
+                    <select id="buy-players">
+                        <option value="">Any</option>
+                        <option value="1">1 Player</option>
+                        <option value="2">2 Players</option>
+                        <option value="3">3 Players</option>
+                        <option value="4">4 Players</option>
+                        <option value="5">5 Players</option>
+                        <option value="6">6+ Players</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="buy-complexity">Complexity</label>
+                    <select id="buy-complexity">
+                        <option value="">Any</option>
+                        <option value="light">Light (1-2)</option>
+                        <option value="medium">Medium (2-3.5)</option>
+                        <option value="heavy">Heavy (3.5-5)</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="buy-duration">Duration</label>
+                    <select id="buy-duration">
+                        <option value="">Any</option>
+                        <option value="quick">Quick (0-30 min)</option>
+                        <option value="medium">Medium (30-60 min)</option>
+                        <option value="long">Long (60-90 min)</option>
+                        <option value="verylong">Very Long (90+ min)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="button-area">
+                <button class="btn btn-buy" id="show-buy">Show Recommendations</button>
+            </div>
+
+            <div id="buy-results">
+                <div class="empty-state">
+                    <p>Select your preferences and click "Show Recommendations"!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // Global data
+        let ownedGames = [];
+        let buyGames = [];
+        let ownedShownGames = new Set(); // Track shown games for cycling
+
+        // Load JSON data
+        async function loadData() {
+            try {
+                const [ownedResponse, buyResponse] = await Promise.all([
+                    fetch('owned-games.json'),
+                    fetch('bgg-recommendations.json')
+                ]);
+
+                ownedGames = await ownedResponse.json();
+                buyGames = await buyResponse.json();
+
+                console.log(`Loaded ${ownedGames.length} owned games and ${buyGames.length} recommended games`);
+            } catch (error) {
+                console.error('Error loading game data:', error);
+            }
+        }
+
+        // Filter games based on criteria
+        function filterGames(games, playerCount, complexity, duration) {
+            return games.filter(game => {
+                // Player count filter
+                if (playerCount) {
+                    const players = parseInt(playerCount);
+                    if (players === 6) {
+                        // 6+ players
+                        if (game.maxplayers < 6) return false;
+                    } else {
+                        // Specific player count must be within min/max range
+                        if (game.minplayers > players || game.maxplayers < players) return false;
+                    }
+                }
+
+                // Complexity filter
+                if (complexity) {
+                    const weight = game.avgweight;
+                    if (complexity === 'light' && (weight < 1 || weight > 2)) return false;
+                    if (complexity === 'medium' && (weight < 2 || weight > 3.5)) return false;
+                    if (complexity === 'heavy' && (weight < 3.5 || weight > 5)) return false;
+                }
+
+                // Duration filter
+                if (duration) {
+                    const time = game.playingtime;
+                    if (duration === 'quick' && time > 30) return false;
+                    if (duration === 'medium' && (time <= 30 || time > 60)) return false;
+                    if (duration === 'long' && (time <= 60 || time > 90)) return false;
+                    if (duration === 'verylong' && time <= 90) return false;
+                }
+
+                return true;
+            });
+        }
+
+        // Create game card HTML
+        function createGameCard(game, section) {
+            const bggUrl = `https://boardgamegeek.com/boardgame/${game.id}`;
+
+            // Determine complexity label
+            let complexityLabel = 'N/A';
+            if (game.avgweight >= 1 && game.avgweight <= 2) complexityLabel = 'Light';
+            else if (game.avgweight > 2 && game.avgweight <= 3.5) complexityLabel = 'Medium';
+            else if (game.avgweight > 3.5) complexityLabel = 'Heavy';
+
+            // Determine duration label
+            let durationLabel = 'N/A';
+            if (game.playingtime <= 30) durationLabel = 'Quick';
+            else if (game.playingtime <= 60) durationLabel = 'Medium';
+            else if (game.playingtime <= 90) durationLabel = 'Long';
+            else durationLabel = 'Very Long';
+
+            return `
+                <div class="game-card">
+                    <h3><a href="${bggUrl}" target="_blank" rel="noopener">${game.name}</a></h3>
+                    <div>
+                        <span class="rating-badge">⭐ ${game.average ? game.average.toFixed(1) : 'N/A'}</span>
+                    </div>
+                    <div class="game-info">
+                        <div class="info-item">
+                            <span class="info-label">Players</span>
+                            <span class="info-value">${game.minplayers}-${game.maxplayers}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Time</span>
+                            <span class="info-value">${game.playingtime} min</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Complexity</span>
+                            <span class="info-value">${complexityLabel}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Year</span>
+                            <span class="info-value">${game.yearpublished}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Recommend owned games
+        function recommendOwnedGames() {
+            const playerCount = document.getElementById('owned-players').value;
+            const complexity = document.getElementById('owned-complexity').value;
+            const duration = document.getElementById('owned-duration').value;
+
+            const filtered = filterGames(ownedGames, playerCount, complexity, duration);
+
+            if (filtered.length === 0) {
+                document.getElementById('owned-results').innerHTML = `
+                    <div class="empty-state">
+                        <p>No games match your criteria. Try adjusting your filters!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Get 3 random games, avoiding recently shown ones if possible
+            const available = filtered.filter(g => !ownedShownGames.has(g.id));
+
+            // If we've shown all available games, reset the tracking
+            if (available.length === 0) {
+                ownedShownGames.clear();
+                available.push(...filtered);
+            }
+
+            // Shuffle and pick 3
+            const shuffled = available.sort(() => Math.random() - 0.5);
+            const selected = shuffled.slice(0, Math.min(3, shuffled.length));
+
+            // Track shown games
+            selected.forEach(g => ownedShownGames.add(g.id));
+
+            // Display results
+            const html = `
+                <div class="game-grid">
+                    ${selected.map(game => createGameCard(game, 'owned')).join('')}
+                </div>
+            `;
+
+            document.getElementById('owned-results').innerHTML = html;
+        }
+
+        // Show buy recommendations
+        function showBuyRecommendations() {
+            const playerCount = document.getElementById('buy-players').value;
+            const complexity = document.getElementById('buy-complexity').value;
+            const duration = document.getElementById('buy-duration').value;
+
+            const filtered = filterGames(buyGames, playerCount, complexity, duration);
+
+            if (filtered.length === 0) {
+                document.getElementById('buy-results').innerHTML = `
+                    <div class="empty-state">
+                        <p>No games match your criteria. Try adjusting your filters!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort by rating and show all matching games
+            const sorted = filtered.sort((a, b) => b.average - a.average);
+
+            const html = `
+                <div class="game-grid">
+                    ${sorted.map(game => createGameCard(game, 'buy')).join('')}
+                </div>
+            `;
+
+            document.getElementById('buy-results').innerHTML = html;
+        }
+
+        // Event listeners
+        document.getElementById('recommend-owned').addEventListener('click', recommendOwnedGames);
+        document.getElementById('show-buy').addEventListener('click', showBuyRecommendations);
+
+        // Auto-update buy recommendations when filters change
+        document.getElementById('buy-players').addEventListener('change', showBuyRecommendations);
+        document.getElementById('buy-complexity').addEventListener('change', showBuyRecommendations);
+        document.getElementById('buy-duration').addEventListener('change', showBuyRecommendations);
+
+        // Sync filter changes between sections (optional - use the same criteria)
+        function syncFilters(sourcePrefix, targetPrefix) {
+            document.getElementById(`${sourcePrefix}-players`).addEventListener('change', (e) => {
+                document.getElementById(`${targetPrefix}-players`).value = e.target.value;
+            });
+            document.getElementById(`${sourcePrefix}-complexity`).addEventListener('change', (e) => {
+                document.getElementById(`${targetPrefix}-complexity`).value = e.target.value;
+            });
+            document.getElementById(`${sourcePrefix}-duration`).addEventListener('change', (e) => {
+                document.getElementById(`${targetPrefix}-duration`).value = e.target.value;
+            });
+        }
+
+        // Sync filters from Section 1 to Section 2
+        syncFilters('owned', 'buy');
+
+        // Load data on page load
+        loadData();
+    </script>
+</body>
+</html>
