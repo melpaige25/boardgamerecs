@@ -339,7 +339,6 @@
         // Global data
         let ownedGames = [];
         let buyGames = [];
-        let ownedShownGames = new Set(); // Track shown games for cycling
 
         // Load JSON data
         async function loadData() {
@@ -455,21 +454,9 @@
                     </div>
                 `;
             } else {
-                // Get 3 random games, avoiding recently shown ones if possible
-                const available = filteredOwned.filter(g => !ownedShownGames.has(g.id));
-
-                // If we've shown all available games, reset the tracking
-                if (available.length === 0) {
-                    ownedShownGames.clear();
-                    available.push(...filteredOwned);
-                }
-
-                // Shuffle and pick 3
-                const shuffled = available.sort(() => Math.random() - 0.5);
+                // Shuffle and pick 3 random games
+                const shuffled = [...filteredOwned].sort(() => Math.random() - 0.5);
                 const selected = shuffled.slice(0, Math.min(3, shuffled.length));
-
-                // Track shown games
-                selected.forEach(g => ownedShownGames.add(g.id));
 
                 // Display results
                 const html = `
@@ -491,12 +478,12 @@
                     </div>
                 `;
             } else {
-                // Sort by rating and show all matching games
-                const sorted = filteredBuy.sort((a, b) => b.average - a.average);
+                // Shuffle games to show different results each time
+                const shuffled = [...filteredBuy].sort(() => Math.random() - 0.5);
 
                 const html = `
                     <div class="game-grid">
-                        ${sorted.map(game => createGameCard(game)).join('')}
+                        ${shuffled.map(game => createGameCard(game)).join('')}
                     </div>
                 `;
 
